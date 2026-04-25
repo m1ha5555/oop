@@ -42,7 +42,7 @@ class EBook extends Book {
     private float $lateFeeMultiplier;
  
     public function __construct(string $title, string $author, int $year, float $lateFee, float $fileSize, float $lateFeeMultiplier) {
-        parent::__construct($title, $author, $year, $lateFee);  // ← ИСПРАВЛЕНО
+        parent::__construct($title, $author, $year, $lateFee);
         $this->fileSize = $fileSize;
         $this->lateFeeMultiplier = $lateFeeMultiplier;
     }
@@ -56,7 +56,7 @@ class EBook extends Book {
     }
 
     public function getInfo(): string {
-        return "{$this->title}: {$this->author} ({$this->year}, электронная книга, размер: {$this->fileSize} МБ)";  // ← ИСПРАВЛЕНО
+        return "{$this->title}: {$this->author} ({$this->year}, электронная книга, размер: {$this->fileSize} МБ)";
     }    
 }
 
@@ -69,7 +69,7 @@ class Library {
         self::$totalBooks++;
     }
 
-    public function removeBook(int $index): void {  // ← ИСПРАВЛЕНО
+    public function removeBook(int $index): void {
         if (isset($this->books[$index])) {
             unset($this->books[$index]);
             $this->books = array_values($this->books);
@@ -105,13 +105,13 @@ class Library {
 
 // Использование
 $book = new Book('Война и мир', 'Лев Толстой', 1869, 10);
-$book2 = new EBook('1984', 'Джордж Оруэлл', 1949, 10, 2.5, 0.7);  // ← ИСПРАВЛЕНО
+$book2 = new EBook('1984', 'Джордж Оруэлл', 1949, 10, 2.5, 0.7); 
 
 $library = new Library();
 $library->addBook($book);
 $library->addBook($book2);
 
-echo $library->getCatalog();  // ← ИСПРАВЛЕНО
+echo $library->getCatalog(); 
 echo "<hr>";
 
 echo 'Общий штраф за 5 дней просрочки: <br>';
@@ -121,4 +121,4 @@ foreach ($library->getAllBooks() as $book) {
 echo "<br>";
 echo 'ИТОГО:' . $library->getTotalLateFee(5) . 'руб.';
 echo "<hr>";
-echo 'Всего книг в системе:' . Library::getTotalBooksCount();  // ← ИСПРАВЛЕНО
+echo 'Всего книг в системе:' . Library::getTotalBooksCount();
