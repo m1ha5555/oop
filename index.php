@@ -1,5 +1,7 @@
 <?php
-//oop
+
+//Library
+
 class Book {
     public string $title;
     public string $author;
@@ -37,6 +39,7 @@ class Book {
         return $days * $this->lateFee;
     }
 }
+
 class EBook extends Book {
     private float $fileSize;
     private float $lateFeeMultiplier;
@@ -61,6 +64,7 @@ class EBook extends Book {
 }
 
 class Library {
+
     private array $books = [];
     public static int $totalBooks = 0;
 
@@ -73,6 +77,7 @@ class Library {
         if (isset($this->books[$index])) {
             unset($this->books[$index]);
             $this->books = array_values($this->books);
+            self::$totalBooks--;
         }
     }
 
@@ -92,7 +97,7 @@ class Library {
         return $sum;
     }
 
-    public function getCatalog(): string {  // ← ПЕРЕИМЕНОВАНО
+    public function getCatalog(): string {
         $catalog = '';
         $num = 1;
         foreach ($this->books as $book) {
@@ -101,15 +106,31 @@ class Library {
         }
         return $catalog;
     }
+
+    public function findBooksByAuthor(string $author) : string {
+        $num = 1;
+        $authorList = '';
+        foreach ($this->books as $book) {
+            if( $book->getAuthor() === $author ) {
+                $authorList .= "{$num}. {$book->getInfo()} <br>";
+                $num++;
+            }             
+        }
+
+        return $authorList;
+
+    }
 }
 
-// Использование
+// Тестирование
 $book = new Book('Война и мир', 'Лев Толстой', 1869, 10);
 $book2 = new EBook('1984', 'Джордж Оруэлл', 1949, 10, 2.5, 0.7); 
+$book3 = new Book('Детство', 'Лев Толстой', 1852, 10);
 
 $library = new Library();
 $library->addBook($book);
 $library->addBook($book2);
+$library->addBook($book3);
 
 echo $library->getCatalog(); 
 echo "<hr>";
@@ -118,7 +139,11 @@ echo 'Общий штраф за 5 дней просрочки: <br>';
 foreach ($library->getAllBooks() as $book) {
     echo '-' . $book->getTitle() . ':' . $book->calculateLateFee(5) . 'руб.<br>';
 }
+
 echo "<br>";
 echo 'ИТОГО:' . $library->getTotalLateFee(5) . 'руб.';
+echo "<hr>";
+echo 'Книги автора: Лев Толстой <br>';
+echo ($library->findBooksByAuthor('Лев Толстой')) ?? 'Нет книг данного автора!';
 echo "<hr>";
 echo 'Всего книг в системе:' . Library::getTotalBooksCount();
