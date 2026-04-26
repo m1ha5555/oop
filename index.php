@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 //Library
 
 class Book {
+
     public string $title;
     public string $author;
     public int $year;
@@ -107,43 +110,147 @@ class Library {
         return $catalog;
     }
 
-    public function findBooksByAuthor(string $author) : string {
-        $num = 1;
-        $authorList = '';
-        foreach ($this->books as $book) {
-            if( $book->getAuthor() === $author ) {
-                $authorList .= "{$num}. {$book->getInfo()} <br>";
-                $num++;
-            }             
-        }
-
-        return $authorList;
-
+    public function findBooksByAuthor(string $author) : array {
+        return array_filter($this->books, function($book) use ($author) {
+            return $book->getAuthor() === $author;
+        });
     }
+
+    public function findBooksAfterYear(int $year) : array {
+        return array_filter($this->books, function($book) use ($year) {
+            return $book->getYear() > $year;
+        });
+    }
+
+    public function sortBooksByYear(bool $ascending = true) : void {
+        
+        usort($this->books, function($a, $b) use ($ascending) {
+            if ($ascending) {
+                return $a->getYear() <=> $b->getYear();
+            } else {
+                return $b->getYear() <=> $a->getYear();
+            }
+        });
+    }
+
+    public function findBooksInYearRange(int $startYear, int $endYear): array {
+        return array_filter($this->books, function($book) use ($startYear, $endYear) {
+            return $book->getYear() >= $startYear && $book->getYear() <= $endYear;
+        });
+    }
+
+    public function sortBooksByAuthor() : void {
+        usort($this->books, function($a, $b) {
+            return strcmp($a->getAuthor(), $b->getAuthor());
+        });
+    }
+
+    public function sortBooksByTitle() : void {
+        usort($this->books, function($a, $b) {
+            return strcmp($a->getTitle(), $b->getTitle());
+        });
+    }
+        
+    public function getStatistics(): array {
+        if (empty($this->books)) {
+            return [
+                'total_books' => 0,
+                'oldest_year' => null,
+                'newest_year' => null,
+                'unique_authors' => 0,
+                'total_late_fee_per_day' => 0.0
+            ];
+        }
+        
+        $years = array_map(fn($book) => $book->getYear(), $this->books);
+        $authors = array_map(fn($book) => $book->getAuthor(), $this->books);
+        $totalLateFee = array_sum(array_map(fn($book) => $book->getLateFee(), $this->books));
+        
+        return [
+            'total_books' => count($this->books),
+            'oldest_year' => min($years),
+            'newest_year' => max($years),
+            'unique_authors' => count(array_unique($authors)),
+            'total_late_fee_per_day' => $totalLateFee
+        ];
+    }
+
 }
 
 // Тестирование
-$book = new Book('Война и мир', 'Лев Толстой', 1869, 10);
-$book2 = new EBook('1984', 'Джордж Оруэлл', 1949, 10, 2.5, 0.7); 
-$book3 = new Book('Детство', 'Лев Толстой', 1852, 10);
 
 $library = new Library();
-$library->addBook($book);
-$library->addBook($book2);
-$library->addBook($book3);
+$library->addBook(new Book('Война и мир', 'Лев Толстой', 1869, 10));
+$library->addBook(new Book('Детство', 'Лев Толстой', 1852, 10));
+$library->addBook(new Book('1984', 'Джордж Оруэлл', 1949, 8));
+$library->addBook(new Book('Скотный двор', 'Оруэлл Дж.', 1945, 7));
+$library->addBook(new EBook('Краткая история времени', 'Хокинг С.', 1988, 12, 5.2, 0.6));
+$library->addBook(new Book('Анна Каренина', 'Лев Толстой', 1877, 10));
+$library->addBook(new Book('Гарри Поттер', 'Джордж Оруэлл', 1997, 9));
 
-echo $library->getCatalog(); 
+echo "<h3>Исходный порядок:</h3>";
+echo $library->getCatalog();
 echo "<hr>";
 
-echo 'Общий штраф за 5 дней просрочки: <br>';
+// Сортируем по году (от старых к новым)
+$library->sortBooksByYear();
+echo "<h3>После сортировки по году (старые → новые):</h3>";
+echo $library->getCatalog();
+echo "<hr>";
+
+// Общий штраф
+echo '<h3>Общий штраф за 5 дней просрочки: </h3>';
 foreach ($library->getAllBooks() as $book) {
     echo '-' . $book->getTitle() . ':' . $book->calculateLateFee(5) . 'руб.<br>';
 }
+echo '<h4>ИТОГО:' . $library->getTotalLateFee(5) . ' руб.</h4>';
+echo "<hr>";
 
-echo "<br>";
-echo 'ИТОГО:' . $library->getTotalLateFee(5) . 'руб.';
+// Сортируем по автору
+$library->sortBooksByAuthor();
+echo "<h3>После сортировки по автору (А→Я):</h3>";
+echo $library->getCatalog();
 echo "<hr>";
-echo 'Книги автора: Лев Толстой <br>';
-echo ($library->findBooksByAuthor('Лев Толстой')) ?? 'Нет книг данного автора!';
+
+// Сортируем по Названию
+$library->sortBooksByTitle();
+echo "<h3>После сортировки по названию (А→Я):</h3>";
+echo $library->getCatalog();
 echo "<hr>";
-echo 'Всего книг в системе:' . Library::getTotalBooksCount();
+
+echo "<h3>Книги 1940-1980 годов:</h3>";
+$midCentury = $library->findBooksInYearRange(1940, 1980);
+foreach ($midCentury as $book) {
+    echo "- " . $book->getInfo() . "<br>";
+}
+
+// Книги после определенного года
+echo '<h3>Книги после 1900 г.:</h3>';
+$modernBooks = $library->findBooksAfterYear(1900);
+if (count($modernBooks) > 0) {
+    foreach ($modernBooks as $book) {
+        echo "- " . $book->getInfo() . "<br>";
+    }
+} else {
+    echo "Нет книг после данного года!";
+}
+echo "<hr>";
+
+echo '<h3>Книги автора: Лев Толстой</h3>';
+$foundBooks = $library->findBooksByAuthor('Лев Толстой');
+if (count($foundBooks) > 0) {
+    foreach ($foundBooks as $book) {
+        echo "- " . $book->getInfo() . "<br>";
+    }
+} else {
+    echo "Нет книг данного автора!";
+}
+echo "<hr>";
+echo '<h3>Всего книг в системе:' . Library::getTotalBooksCount() . '</h3>';
+
+// Статистика
+echo "<h3>Статистика библиотеки:</h3>";
+$stats = $library->getStatistics();
+echo "<pre>";
+print_r($stats);
+echo "</pre>";
