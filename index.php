@@ -177,6 +177,112 @@ class Library {
 
 }
 
+class Reader {
+
+    private int $id;
+    private string $name;
+    private string $email;
+    private string $registeredAt;
+
+    public function __construct( int $id, string $name, string $email, string $registeredAt ){
+        $this->id = $id;
+        $this->name = $name;
+        $this->email = $email;
+        $this->registeredAt = new DateTime($registeredAt);
+    }
+ 
+    public function getId() : int {
+        return $this->id;
+    }
+ 
+    public function getName() : string {
+        return $this->name;
+    }
+ 
+    public function getEmail() : string {
+        return $this->email;
+    }
+ 
+    public function getRegisteredAt() : DateTime {
+        return $this->registeredAt;
+    }
+
+    public function getInfo() : string {
+        return "#{$this->id}: {$this->name} ({$this->email})";
+    }
+
+    public function getRegistrationDateFormatted(string $format = 'd.m.Y'): string {
+        return $this->registeredAt->format($format);
+    }
+
+}
+
+class Loan {
+    private Book $book;
+    private Reader $reader;
+    private DateTime $borrowedAt;
+    private DateTime $dueDate;
+    private ?DateTime $returnedAt = null;  // тип с ? и сразу null
+
+    public function __construct(Book $book, Reader $reader, DateTime $borrowedAt) {
+        $this->book = $book;
+        $this->reader = $reader;
+        $this->borrowedAt = $borrowedAt;
+        // Важно: клонируем, чтобы не изменить исходную дату
+        $this->dueDate = (clone $borrowedAt)->add(new DateInterval('P14D'));
+        $this->returnedAt = null;
+    }
+
+    public function getBook(): Book {
+        return $this->book;
+    }
+
+    public function getReader(): Reader {
+        return $this->reader;
+    }
+
+    public function getBorrowedAt(): DateTime {
+        return $this->borrowedAt;
+    }
+
+    public function getDueDate(): DateTime {
+        return $this->dueDate;
+    }
+
+    public function getReturnedAt(): ?DateTime {
+        return $this->returnedAt;
+    }
+
+    public function isOverdue(): bool {
+        // Если книга уже возвращена — не просрочена
+        if ($this->returnedAt !== null) {
+            return false;
+        }
+        
+        $now = new DateTime();
+        return $this->dueDate < $now;
+
+        //return $this->returnedAt === null && $this->dueDate < new DateTime();
+    }
+
+    public function returnBook(): void {
+        $this->returnedAt = new DateTime();
+    }
+
+    public function getFine(): float {
+        if (!$this->isOverdue()) {
+            return 0.0;
+        }
+        
+        $now = new DateTime();
+        $diff = $now->diff($this->dueDate);
+        $daysOverdue = $diff->days;
+        
+        return $daysOverdue * $this->book->calculateLateFee(1);
+    }
+}
+ 
+
 // Тестирование
 
 $library = new Library();
